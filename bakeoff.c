@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
 // Resources in our shared kitchen
 #define MIXERS 2
@@ -83,19 +84,19 @@ typedef struct
 
 void access_pantry(int baker_id, PantryIngredient needed_ingredient)
 {
-    printf("Baker %d is waitning for the refrigerator.\n", baker_id);
+    printf("Baker %d is waiting for the pantry.\n", baker_id);
     // Lock access to the pantry
     sem_wait(&pantry);
     printf("Baker %d is in the pantry gathering ingredients.\n", baker_id);
 
     // Release access to the pantry
-    printf("Baker %d is done with the refrigerator.\n", baker_id);
+    printf("Baker %d is done with the pantry.\n", baker_id);
     sem_post(&pantry);
 }
 
 void access_fridge(int baker_id, FridgeIngredient needed_ingredient)
 {
-    printf("Baker %d is waitning for the refrigerator.\n", baker_id);
+    printf("Baker %d is waiting for the refrigerator.\n", baker_id);
     // Lock access to the refrigerator
     sem_wait(&refrigerator);
 
@@ -132,7 +133,7 @@ AllIngredients get_ingredient_enum(const char *ingredient)
     {
         return CINNAMON;
     }
-    else if (strcmp(ingredient, "Egg") == 0)
+    else if (strcmp(ingredient, "Eggs") == 0)
     {
         return EGGS;
     }
@@ -153,16 +154,20 @@ AllIngredients get_ingredient_enum(const char *ingredient)
 // This is where our bakers will operate.
 void *kitchen(void *args)
 {
+    //while(!competitionStart);
+
     Baker *baker = (Baker *)args;
     printf("Baker %d is ready! Welcome to the competition.\n", baker->id);
 
     // Initialize ingredients
-    Recipe recipeList[] = {
+    Recipe recipeList[] = 
+    {
         {"Cookies", {"Flour", "Sugar", "Milk", "Butter"}, 4, false},
-        {"Pancakes", {"Flour", "Sugar", "Baking soda", "Salt", "Egg", "Milk", "Butter"}, 7, false},
+        {"Pancakes", {"Flour", "Sugar", "Baking_soda", "Salt", "Eggs", "Milk", "Butter"}, 7, false},
         {"Homemade pizza dough", {"Yeast", "Sugar", "Salt"}, 3, false},
-        {"Soft Pretzels", {"Flour", "Sugar", "Salt", "Yeast", "Baking Soda", "Egg"}, 6, false},
-        {"Cinnamon Rolls", {"Flour", "Sugar", "Salt", "Butter", "Eggs", "Cinnamon"}, 6, false}};
+        {"Soft Pretzels", {"Flour", "Sugar", "Salt", "Yeast", "Baking_soda", "Eggs"}, 6, false},
+        {"Cinnamon Rolls", {"Flour", "Sugar", "Salt", "Butter", "Eggs", "Cinnamon"}, 6, false}
+    };
 
     // printf("Size of list %ld\n", sizeof(recipeList) / sizeof(recipeList[0])); //Debugging & Size Validation
 
@@ -176,60 +181,61 @@ void *kitchen(void *args)
             printf("Baker %d needs %s\n", baker->id, recipeList[i].ingredients[j]);
 
             AllIngredients ingredient_enum = get_ingredient_enum(recipeList[i].ingredients[j]);
+            
 
             switch (ingredient_enum)
             {
             case FLOUR:
                 // Handle Flour
-                printf("Walking to the Flour\n");
+                printf("Baker %d is walking to the Flour\n", baker->id);
                 access_pantry(baker->id, Flour);
                 break;
 
             case SUGAR:
                 // Handle Sugar
-                printf("Waling to the Sugar\n");
+                printf("Baker %d is walking to the Sugar\n", baker->id);
                 access_pantry(baker->id, Sugar);
                 break;
 
             case YEAST:
                 // Handle Yeast
-                printf("Walking to the Yeast\n");
+                printf("Baker %d is walking to the Yeast\n", baker->id);
                 access_pantry(baker->id, Yeast);
                 break;
 
             case BAKING_SODA:
                 // Handle Baking Soda
-                printf("walking to the Baking Soda\n");
+                printf("Baker %d is walking to the Baking Soda\n", baker->id);
                 access_pantry(baker->id, Baking_soda);
                 break;
 
             case SALT:
                 // Handle Salt
-                printf("Walking to the Salt\n");
+                printf("Baker %d is walking to the Salt\n", baker->id);
                 access_pantry(baker->id, Salt);
                 break;
 
             case CINNAMON:
                 // Handle Cinnamon
-                printf("Walking to the Cinnamon\n");
+                printf("Baker %d is walking to the Cinnamon\n", baker->id);
                 access_pantry(baker->id, Cinnamon);
                 break;
 
             case EGGS:
                 // Handle Eggs
-                printf("Walking to the Eggs\n");
+                printf("Baker %d is walking to the Eggs\n", baker->id);
                 access_fridge(baker->id, Eggs);
                 break;
 
             case MILK:
                 // Handle Mlik
-                printf("Walking to the Milk\n");
+                printf("Baker %d is walking to the Milk\n", baker->id);
                 access_fridge(baker->id, Milk);
                 break;
 
             case BUTTER:
                 // Handle Mlik
-                printf("Walking to the Butter\n");
+                printf("Baker %d is walking to the Butter\n", baker->id);
                 access_fridge(baker->id, Butter);
                 break;
 
@@ -239,8 +245,37 @@ void *kitchen(void *args)
                 break;
             }
         }
+        printf("Baker %d has got all the ingredients for %s\n", baker->id, recipeList[i].name);
+
+        printf("Baker %d is waiting for a bowl.\n", baker->id);
+        sem_wait(&bowl);
+        printf("Baker %d has a bowl.\n", baker->id);
+
+        printf("Baker %d is waiting for a spoon.\n", baker->id);
+        sem_wait(&spoon);
+        printf("Baker %d has a spoon.\n", baker->id);
+
+        printf("Baker %d is waiting for a mixer.\n", baker->id);
+        sem_wait(&mixer);
+        printf("Baker %d has a mixer.\n", baker->id);
+
+        printf("Baker %d has all the tools & is putting them back.\n", baker->id);
+        sem_post(&bowl);
+        sem_post(&spoon);
+        sem_post(&mixer);
+
+        printf("Baker %d is waiting to use the oven. \n", baker->id);
+        sem_wait(&oven);
+        printf("Baker %d is using the oven. \n", baker->id);
+
+        printf("Baker %d is waiting to use the oven. \n", baker->id);
+        sem_post(&oven);
+        printf("Baker %d is done with the oven. \n", baker->id);
+
         printf("Baker %d has completed %s\n", baker->id, recipeList[i].name);
     }
+
+    return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -266,21 +301,47 @@ int main(int argc, char *argv[])
 
     pthread_t bakerThreads[total_bakers];
 
+    // Seed the random number generator with the current time
+    srand(time(NULL));
+
+    // Our min and max for our random number.
+    int min = 0;
+    int max = total_bakers;
+
+    // Generate a random number between 0 and RAND_MAX
+    int random_num = min + rand() % (max - min + 1);
+
     // Create and Initialize Bakers Threads.
     for (int i = 0; i < total_bakers; i++)
     {
         bakers[i].id = i + 1;
-        bakers[i].ramsied = false;
+        if (i == random_num)
+        {
+            bakers[i].ramsied = true; // The baker won't be ramsied right away but will be later on.
+            printf("Baker %d will be ramsied later on...\n", bakers[i].id);
+        }
+        else
+        {
+            bakers[i].ramsied = false;
+        }
+
         pthread_create(&bakerThreads[i], NULL, kitchen, (void *)&bakers[i]); // Baker Thread, NULL, function to work on, bakerID
+        
+        // EXPERIMENT: If we uncommenet this, then each baker will wait for each other to complete.
+        // This isn't really want we want as we want to simulate a competition of resources. 
+        // pthread_join(bakerThreads[i], NULL);
     }
 
-    // Join the Baker Threads.
-    for (int i = 0; i < total_bakers; ++i)
-    {
-        pthread_join(bakerThreads[i], NULL);
-    }
+    while(1);
 
     printf("All bakers have completed their tasks!\n");
+
+    sem_destroy(&mixer);
+    sem_destroy(&pantry);
+    sem_destroy(&refrigerator);
+    sem_destroy(&bowl);
+    sem_destroy(&spoon);
+    sem_destroy(&oven);
 
     return 0;
 }
