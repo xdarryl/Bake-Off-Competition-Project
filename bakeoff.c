@@ -81,38 +81,28 @@ typedef struct
     bool isCompleted;
 } Recipe;
 
-void access_pantry(int baker_id, PantryIngredient *needed_ingredients, int num_ingredients)
+void access_pantry(int baker_id, PantryIngredient needed_ingredient)
 {
+    printf("Baker %d is waitning for the refrigerator.\n", baker_id);
     // Lock access to the pantry
     sem_wait(&pantry);
     printf("Baker %d is in the pantry gathering ingredients.\n", baker_id);
 
-    for (int i = 0; i < num_ingredients; i++)
-    {
-        printf("Baker %d is taking %s from the pantry.\n", baker_id,
-               (needed_ingredients[i] == Flour) ? "Flour" : (needed_ingredients[i] == Sugar)     ? "Sugar"
-                                                        : (needed_ingredients[i] == Yeast)       ? "Yeast"
-                                                        : (needed_ingredients[i] == Baking_soda) ? "Baking Soda"
-                                                        : (needed_ingredients[i] == Salt)        ? "Salt"
-                                                                                                 : "Cinnamon");
-    }
     // Release access to the pantry
+    printf("Baker %d is done with the refrigerator.\n", baker_id);
     sem_post(&pantry);
 }
 
-void access_fridge(int baker_id, FridgeIngredient *needed_ingredients, int num_ingredients)
+void access_fridge(int baker_id, FridgeIngredient needed_ingredient)
 {
+    printf("Baker %d is waitning for the refrigerator.\n", baker_id);
     // Lock access to the refrigerator
     sem_wait(&refrigerator);
+
     printf("Baker %d is in the refrigerator gathering ingredients.\n", baker_id);
 
-    for (int i = 0; i < num_ingredients; i++)
-    {
-        printf("Baker %d is taking %s from the refrigerator.\n", baker_id,
-               (needed_ingredients[i] == Eggs) ? "Eggs" : (needed_ingredients[i] == Milk) ? "Milk"
-                                                                                          : "Butter");
-    }
     // Release access to the refrigerator
+    printf("Baker %d is done with the refrigerator.\n", baker_id);
     sem_post(&refrigerator);
 }
 
@@ -126,23 +116,38 @@ AllIngredients get_ingredient_enum(const char *ingredient)
     {
         return SUGAR;
     }
-    else if (strcmp(ingredient, "Butter") == 0)
+    else if (strcmp(ingredient, "Yeast") == 0)
     {
-        return BUTTER;
+        return YEAST;
     }
-    else if (strcmp(ingredient, "Milk") == 0)
+    else if (strcmp(ingredient, "Baking_soda") == 0)
     {
-        return MILK;
+        return BAKING_SODA;
+    }
+    else if (strcmp(ingredient, "Salt") == 0)
+    {
+        return SALT;
+    }
+    else if (strcmp(ingredient, "Cinnamon") == 0)
+    {
+        return CINNAMON;
     }
     else if (strcmp(ingredient, "Egg") == 0)
     {
         return EGGS;
     }
+    else if (strcmp(ingredient, "Milk") == 0)
+    {
+        return MILK;
+    }
+    else if (strcmp(ingredient, "Butter") == 0)
+    {
+        return BUTTER;
+    }
     else
     {
-        return Unknown;     
+        return Unknown;
     }
-
 }
 
 // This is where our bakers will operate.
@@ -176,35 +181,78 @@ void *kitchen(void *args)
             {
             case FLOUR:
                 // Handle Flour
-                printf("Handling Flour\n");
+                printf("Walking to the Flour\n");
+                access_pantry(baker->id, Flour);
                 break;
+
             case SUGAR:
                 // Handle Sugar
-                printf("Handling Sugar\n");
+                printf("Waling to the Sugar\n");
+                access_pantry(baker->id, Sugar);
                 break;
-            case BUTTER:
-                // Handle Butter
-                printf("Handling Butter\n");
+
+            case YEAST:
+                // Handle Yeast
+                printf("Walking to the Yeast\n");
+                access_pantry(baker->id, Yeast);
                 break;
-            case MILK:
-                // Handle Milk
-                printf("Handling Milk\n");
+
+            case BAKING_SODA:
+                // Handle Baking Soda
+                printf("walking to the Baking Soda\n");
+                access_pantry(baker->id, Baking_soda);
                 break;
+
+            case SALT:
+                // Handle Salt
+                printf("Walking to the Salt\n");
+                access_pantry(baker->id, Salt);
+                break;
+
+            case CINNAMON:
+                // Handle Cinnamon
+                printf("Walking to the Cinnamon\n");
+                access_pantry(baker->id, Cinnamon);
+                break;
+
             case EGGS:
-                // Handle Egg
-                printf("Handling Egg\n");
+                // Handle Eggs
+                printf("Walking to the Eggs\n");
+                access_fridge(baker->id, Eggs);
                 break;
+
+            case MILK:
+                // Handle Mlik
+                printf("Walking to the Milk\n");
+                access_fridge(baker->id, Milk);
+                break;
+
+            case BUTTER:
+                // Handle Mlik
+                printf("Walking to the Butter\n");
+                access_fridge(baker->id, Butter);
+                break;
+
             default:
                 // Handle unknown ingredient
                 printf("Unknown ingredient\n");
                 break;
             }
         }
+        printf("Baker %d has completed %s\n", baker->id, recipeList[i].name);
     }
 }
 
 int main(int argc, char *argv[])
 {
+    // Initialize semaphores
+    sem_init(&mixer, 0, MIXERS);
+    sem_init(&pantry, 0, PANTRIES);
+    sem_init(&refrigerator, 0, REFRIGERATORS);
+    sem_init(&bowl, 0, BOWLS);
+    sem_init(&spoon, 0, SPOONS);
+    sem_init(&oven, 0, OVEN);
+
     // Variable for total bakers.
     int total_bakers;
 
@@ -231,14 +279,6 @@ int main(int argc, char *argv[])
     {
         pthread_join(bakerThreads[i], NULL);
     }
-
-    // Initialize semaphores
-    sem_init(&mixer, 0, MIXERS);
-    sem_init(&pantry, 0, PANTRIES);
-    sem_init(&refrigerator, 0, REFRIGERATORS);
-    sem_init(&bowl, 0, BOWLS);
-    sem_init(&spoon, 0, SPOONS);
-    sem_init(&oven, 0, OVEN);
 
     printf("All bakers have completed their tasks!\n");
 
