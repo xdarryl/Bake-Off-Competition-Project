@@ -20,6 +20,9 @@
 #define SPOONS 5
 #define OVEN 1
 
+// Max number of ingredients
+#define MAX_INGREDIENTS 10
+
 // Resource semaphores
 sem_t mixer, pantry, refrigerator, bowl, spoon, oven;
 
@@ -41,26 +44,49 @@ typedef enum
     Butter
 } FridgeIngredient;
 
-void gather_pantry_ingredients(int baker_id, PantryIngredient *needed_ingredients, int num_ingredients)
+// Baker Struct to hold some information about our bakers.
+typedef struct 
 {
-    sem_wait(&pantry); // Lock access to the pantry
+    // Id for the baker, used mostly for print statements.
+    int id; 
+    // default at first. 
+    bool ramsied; 
+} Baker;
+
+
+// Recipe Struct to hold information about a recipe.
+typedef struct {
+    // Name of recipe
+    const char *name;
+    // An array of ingredients
+    const char *ingredients[MAX_INGREDIENTS];
+    // Number of ingredients in the recipe, doesn't need to be the max can be less.
+    int ingredient_count;
+} Recipe;
+
+void access_pantry(int baker_id, PantryIngredient *needed_ingredients, int num_ingredients)
+{
+    // Lock access to the pantry
+    sem_wait(&pantry); 
     printf("Baker %d is in the pantry gathering ingredients.\n", baker_id);
 
     for (int i = 0; i < num_ingredients; i++)
     {
         printf("Baker %d is taking %s from the pantry.\n", baker_id,
                (needed_ingredients[i] == Flour) ? "Flour" : (needed_ingredients[i] == Sugar)     ? "Sugar"
-                                                        : (needed_ingredients[i] == Yeast)       ? "Yeast"
-                                                        : (needed_ingredients[i] == Baking_soda) ? "Baking Soda"
-                                                        : (needed_ingredients[i] == Salt)        ? "Salt"
+                                                          : (needed_ingredients[i] == Yeast)       ? "Yeast"
+                                                          : (needed_ingredients[i] == Baking_soda) ? "Baking Soda"
+                                                          : (needed_ingredients[i] == Salt)        ? "Salt"
                                                                                                  : "Cinnamon");
     }
-    sem_post(&pantry); // Release access to the pantry
+    // Release access to the pantry
+    sem_post(&pantry); 
 }
 
-void gather_fridge_ingredients(int baker_id, FridgeIngredient *needed_ingredients, int num_ingredients)
+void gather_fridge(int baker_id, FridgeIngredient *needed_ingredients, int num_ingredients)
 {
-    sem_wait(&refrigerator); // Lock access to the refrigerator
+    // Lock access to the refrigerator
+    sem_wait(&refrigerator); 
     printf("Baker %d is in the refrigerator gathering ingredients.\n", baker_id);
 
     for (int i = 0; i < num_ingredients; i++)
@@ -69,16 +95,9 @@ void gather_fridge_ingredients(int baker_id, FridgeIngredient *needed_ingredient
                (needed_ingredients[i] == Eggs) ? "Eggs" : (needed_ingredients[i] == Milk) ? "Milk"
                                                                                           : "Butter");
     }
-
-    sem_post(&refrigerator); // Release access to the refrigerator
+    // Release access to the refrigerator
+    sem_post(&refrigerator);
 }
-
-// Baker Struct to hold some information about our bakers.
-typedef struct 
-{
-    int id; //Id for the baker, used mostly for print statements.
-    bool ramsied; // default at first. 
-} Baker;
 
 // This is where our bakers will operate.
 void *kitchen(void *args)
@@ -86,27 +105,60 @@ void *kitchen(void *args)
     Baker *baker = (Baker *) args;
     printf("Baker %d is ready! Welcome to the competition.\n", baker->id);
 
+    // Initialize ingredients
+    Recipe recipeList[] =
+    {
+    {"Cookies", {"Flour", "Sugar", "Milk", "Butter"}, 4},
+    {"Pancakes", {"Flour", "Sugar", "Baking soda", "Salt", "Egg", "Milk", "Butter"}, 7},
+    {"Homemade pizza dough", {"Yeast", "Sugar", "Salt"}, 3},
+    {"Soft Pretzels", {"Flour", "Sugar", "Salt", "Yeast", "Baking Soda", "Egg"}, 6},
+    {"Cinnamon Rolls", {"Flour", "Sugar", "Salt", "Butter", "Eggs", "Cinnamon"}, 6}
+    };
+
+    //printf("Size of list %ld\n", sizeof(recipeList) / sizeof(recipeList[0])); //Debugging & Size Validation 
+
+    for(int i=0; i < (sizeof(recipeList) / sizeof(recipeList[0])); i++)
+    {
+        Recipe curentRecipe = recipeList[i];
+
+        printf("Baker %d is starting on recipe: %s\n", baker->id, recipeList[i].name);
+        
+    }
+
+
+
+
+    
+
 }
 
 int main(int argc, char *argv[])
 {
-
-    int total_bakers; // 
+    // Variable for total bakers.
+    int total_bakers; 
 
     printf("Welcome to the 2024 CS452 Bake Off!\n");
     printf("Enter the number of bakers for competition: \n");
 
+    // Get the user input for the number of bakers.
     scanf("%d", &total_bakers);
 
     Baker bakers[total_bakers];
 
     pthread_t bakerThreads[total_bakers];
 
+    // Create and Initialize Bakers Threads.
     for (int i = 0; i < total_bakers; i++)
     {
         bakers[i].id = i + 1;
         bakers[i].ramsied = false;
         pthread_create(&bakerThreads[i], NULL, kitchen, (void *)&bakers[i]); // Baker Thread, NULL, function to work on, bakerID
+    }
+    
+    // Join the Baker Threads.
+    for (int i = 0; i < total_bakers; ++i) 
+    {
+        pthread_join(bakerThreads[i], NULL);
     }
 
     // Initialize semaphores
@@ -116,12 +168,6 @@ int main(int argc, char *argv[])
     sem_init(&bowl, 0, BOWLS);
     sem_init(&spoon, 0, SPOONS);
     sem_init(&oven, 0, OVEN);
-
-    // Initialize ingredients
-    for (int i = 0; i < total_bakers; ++i) 
-    {
-        pthread_join(bakerThreads[i], NULL);
-    }
 
     printf("All bakers have completed their tasks!\n");
 
