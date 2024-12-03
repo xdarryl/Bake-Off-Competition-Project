@@ -123,6 +123,7 @@ void access_fridge(int baker_id, FridgeIngredient needed_ingredient)
     printf("Baker %d is done with the refrigerator.\n", baker_id);
     sem_post(&refrigerator);
 }
+
 // This function handles all our ingredient enums and compares them
 // to strings. This is useful for our switch statement(s).
 AllIngredients get_ingredient_enum(const char *ingredient)
@@ -364,6 +365,7 @@ int main(int argc, char *argv[])
     // Variable for total bakers.
     int total_bakers;
 
+    // Print messages to user and to start the competition.
     printf("Welcome to the 2024 CS452 Bake Off!\n");
     printf("Enter the number of bakers for competition: \n");
 
@@ -424,6 +426,7 @@ int main(int argc, char *argv[])
 
     printf("All bakers have completed their tasks!\n");
 
+    // Clean up!!
     sem_destroy(&mixer);
     sem_destroy(&pantry);
     sem_destroy(&refrigerator);
