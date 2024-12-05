@@ -47,6 +47,7 @@ typedef enum
     BUTTER,
     Unknown
 } AllIngredients;
+
 // This enum has all our pantry ingredients,
 // Use for the pantry function and to seperate fridge
 // ingredients.
@@ -59,6 +60,7 @@ typedef enum
     Salt,
     Cinnamon
 } PantryIngredient;
+
 // This enum has all our fridge ingredients,
 // Use for the fridge function and to seperate pantry
 // ingredients.
@@ -216,9 +218,9 @@ void *kitchen(void *args)
                 break;
             }
 
-            // Print message for what hte baker is doing. 
+            // Print message for what hte baker is doing.
             printf("Baker %d needs %s\n", baker->id, recipeList[i].ingredients[j]);
-            
+
             // We use this compare the ingredient in the recipe which is a string
             // and return back a enum that is that ingredient to use in our switch statment.
             AllIngredients ingredient_enum = get_ingredient_enum(recipeList[i].ingredients[j]);
@@ -279,9 +281,10 @@ void *kitchen(void *args)
                 break;
             }
         }
+
         // If ramsied, there's only one time when i = -1, so we can use this to skip this outer loop.
         // Probably a better way to do this, but I found this works.
-        if (i == -1) 
+        if (i == -1)
         {
             continue; // Skip the rest of the outer loop
         }
@@ -324,7 +327,6 @@ void *kitchen(void *args)
 
         // Baker completing that recipe.
         printf("Baker %d has completed %s\n", baker->id, recipeList[i].name);
-
     }
 
     // This baker has completed all the recipes.
@@ -420,8 +422,10 @@ int main(int argc, char *argv[])
         // pthread_join(bakerThreads[i], NULL);
     }
 
-    while (total_completed < total_to_complete)
-        ;
+    // Uses the globel variable and the counter to keep track of when bakers are done.
+    // This keeps main running so that we can print that all bakers are done and clean up
+    // when the resources all threads no longer need them.
+    while (total_completed < total_to_complete){};
     // printf("total_completed: %d, total_to_complete: %d\n", total_completed, total_to_complete); Debugging and Value Validation
 
     printf("All bakers have completed their tasks!\n");
