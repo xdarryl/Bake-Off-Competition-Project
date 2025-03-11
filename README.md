@@ -1,5 +1,5 @@
 <a name="top"></a>
-# Bake Off Competition Project using C
+# Bake Off Competition using C
 Project developed in CS 452
 
 # Project Description 
